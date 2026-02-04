@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: product-service-test
+  
+  # H2数据库配置
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  
+  # H2控制台
+  h2:
+    console:
+      enabled: true
+
+  # 禁用Redis
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-h2.sql
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.yuge.product.domain.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 禁用RocketMQ
+rocketmq:
+  name-server: localhost:9876
+  producer:
+    group: test-producer-group
+
+# 商品服务配置
+product:
+  outbox:
+    enabled: false
+    interval: 1000
+    batch-size: 100
+
+# 日志配置
+logging:
+  level:
+    com.yuge: DEBUG
+    org.springframework: INFO

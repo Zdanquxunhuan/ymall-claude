@@ -1,0 +1,70 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: payment-service-test
+  
+  # H2 内存数据库配置
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  
+  h2:
+    console:
+      enabled: true
+
+  # Redis配置（测试环境可使用嵌入式Redis或Mock）
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 3000ms
+
+  # Jackson配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-h2.sql
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.yuge.payment.domain.entity
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    map-underscore-to-camel-case: true
+
+# RocketMQ配置（测试环境禁用）
+rocketmq:
+  name-server: localhost:9876
+  producer:
+    group: payment-producer-group-test
+    send-message-timeout: 3000
+
+# 支付服务配置
+payment:
+  callback-secret: test-secret-key
+  timeout-minutes: 30
+  reconcile:
+    scan-interval: 60
+    timeout-threshold-minutes: 5
+    batch-size: 100
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.yuge: DEBUG

@@ -1,0 +1,80 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: inventory-service
+  
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/ymall_inventory?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 30000
+      pool-name: InventoryHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+  # Redis配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 3000ms
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.yuge.inventory.domain.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      id-type: assign_id
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# RocketMQ配置
+rocketmq:
+  name-server: localhost:9876
+  producer:
+    group: inventory-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+    retry-times-when-send-async-failed: 2
+
+# 库存服务配置
+inventory:
+  reservation:
+    # 预留过期时间（分钟）
+    expire-minutes: 30
+    timeout:
+      # 是否启用超时释放任务（生产环境建议使用分布式调度）
+      enabled: false
+      # 每批处理数量
+      batch-size: 100
+      # 执行周期（每分钟）
+      cron: "0 * * * * ?"
+
+# 日志配置
+logging:
+  level:
+    com.yuge: DEBUG
+    org.springframework: INFO
+    org.apache.rocketmq: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId}] %-5level %logger{36} - %msg%n"

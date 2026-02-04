@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # MySQL 8.0
+  mysql:
+    image: mysql:8.0
+    container_name: ymall-mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: ymall
+      MYSQL_USER: ymall
+      MYSQL_PASSWORD: ymall123456
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./deploy/mysql/init:/docker-entrypoint-initdb.d
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+8:00
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: ymall-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass redis123456
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis123456", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RocketMQ NameServer
+  namesrv:
+    image: apache/rocketmq:5.1.4
+    container_name: ymall-namesrv
+    restart: always
+    ports:
+      - "9876:9876"
+    environment:
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
+    command: sh mqnamesrv
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9876 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RocketMQ Broker
+  broker:
+    image: apache/rocketmq:5.1.4
+    container_name: ymall-broker
+    restart: always
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    environment:
+      NAMESRV_ADDR: namesrv:9876
+      JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
+    command: sh mqbroker -c /home/rocketmq/rocketmq-5.1.4/conf/broker.conf
+    depends_on:
+      namesrv:
+        condition: service_healthy
+    volumes:
+      - broker_data:/home/rocketmq/store
+      - ./deploy/rocketmq/broker.conf:/home/rocketmq/rocketmq-5.1.4/conf/broker.conf
+
+  # RocketMQ Dashboard (可选)
+  dashboard:
+    image: apacherocketmq/rocketmq-dashboard:latest
+    container_name: ymall-rocketmq-dashboard
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=namesrv:9876"
+    depends_on:
+      - namesrv
+      - broker
+
+volumes:
+  mysql_data:
+  redis_data:
+  broker_data:
+
+networks:
+  default:
+    name: ymall-network

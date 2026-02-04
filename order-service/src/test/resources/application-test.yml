@@ -1,0 +1,48 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: order-service-test
+  
+  # H2内存数据库
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  
+  # H2控制台
+  h2:
+    console:
+      enabled: true
+
+  # Redis (使用embedded-redis或mock)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-h2.sql
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.yuge.order.domain.entity
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    map-underscore-to-camel-case: true
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.yuge: DEBUG

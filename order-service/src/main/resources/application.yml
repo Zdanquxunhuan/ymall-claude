@@ -1,0 +1,94 @@
+server:
+  port: 8082
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: order-service
+  
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/ymall?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ymall
+    password: ymall123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 50
+      idle-timeout: 30000
+      pool-name: OrderHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+  # Redis配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: redis123456
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 10
+          max-wait: 3000ms
+
+  # Jackson配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.yuge.order.domain.entity
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# RocketMQ配置
+rocketmq:
+  name-server: localhost:9876
+  producer:
+    group: order-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+    retry-times-when-send-async-failed: 2
+  consumer:
+    group: order-consumer-group
+
+# Outbox Relay 配置
+outbox:
+  relay:
+    # 每次处理的批量大小
+    batch-size: 100
+    # 轮询间隔（毫秒）
+    poll-interval: 1000
+    # 基础重试间隔（秒）
+    base-retry-interval: 5
+    # 最大重试间隔（秒）
+    max-retry-interval: 3600
+
+# 外部服务配置
+service:
+  pricing:
+    url: http://localhost:8084
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.yuge: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId}] %-5level %logger{36} - %msg%n"
