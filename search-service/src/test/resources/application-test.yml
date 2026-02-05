@@ -1,0 +1,26 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: search-service
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false
+  # Disable RocketMQ auto-configuration for tests
+  autoconfigure:
+    exclude:
+      - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
+
+# Search Configuration
+search:
+  index-type: memory
+  elasticsearch:
+    enabled: false
+
+# Logging
+logging:
+  level:
+    com.yuge: DEBUG

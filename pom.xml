@@ -23,6 +23,7 @@
         <module>pricing-service</module>
         <module>cart-service</module>
         <module>aftersales-service</module>
+        <module>search-service</module>
     </modules>
 
     <properties>
