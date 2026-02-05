@@ -162,4 +162,26 @@ public class InventoryTxn implements Serializable {
         txn.setCreatedAt(LocalDateTime.now());
         return txn;
     }
+
+    /**
+     * 构建退款回补流水
+     */
+    public static InventoryTxn buildRefundRestoreTxn(String txnId, String orderNo, Long skuId, Long warehouseId,
+                                                      int qty, int availableAfter, int reservedAfter,
+                                                      String asNo, String traceId) {
+        InventoryTxn txn = new InventoryTxn();
+        txn.setTxnId(txnId);
+        txn.setOrderNo(orderNo);
+        txn.setSkuId(skuId);
+        txn.setWarehouseId(warehouseId);
+        txn.setDeltaAvailable(qty);
+        txn.setDeltaReserved(0);
+        txn.setAvailableAfter(availableAfter);
+        txn.setReservedAfter(reservedAfter);
+        txn.setReason(TxnReason.REFUND_RESTORE.getCode());
+        txn.setRemark("售后退款回补库存，售后单号: " + asNo);
+        txn.setTraceId(traceId);
+        txn.setCreatedAt(LocalDateTime.now());
+        return txn;
+    }
 }

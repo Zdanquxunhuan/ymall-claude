@@ -22,6 +22,7 @@
         <module>promotion-service</module>
         <module>pricing-service</module>
         <module>cart-service</module>
+        <module>aftersales-service</module>
     </modules>
 
     <properties>

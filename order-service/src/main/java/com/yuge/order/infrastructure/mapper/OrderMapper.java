@@ -55,4 +55,11 @@ public interface OrderMapper extends BaseMapper<Order> {
     int casUpdateStatusOnly(@Param("orderNo") String orderNo, 
                             @Param("fromStatus") String fromStatus, 
                             @Param("toStatus") String toStatus);
+
+    /**
+     * CAS更新订单状态为已退款（支持从PAID/SHIPPED/DELIVERED状态转换）
+     */
+    @Update("UPDATE t_order SET status = #{toStatus}, version = version + 1, updated_at = NOW() " +
+            "WHERE order_no = #{orderNo} AND status IN ('PAID', 'SHIPPED', 'DELIVERED', 'PARTIAL_REFUNDED') AND deleted = 0")
+    int casUpdateToRefunded(@Param("orderNo") String orderNo, @Param("toStatus") String toStatus);
 }

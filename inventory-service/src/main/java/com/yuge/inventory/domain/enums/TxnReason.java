@@ -38,7 +38,12 @@ public enum TxnReason {
     /**
      * 出库 - 发货出库
      */
-    OUTBOUND("OUTBOUND", "出库");
+    OUTBOUND("OUTBOUND", "出库"),
+
+    /**
+     * 退款回补 - 售后退款后回补库存
+     */
+    REFUND_RESTORE("REFUND_RESTORE", "退款回补");
 
     private final String code;
     private final String desc;

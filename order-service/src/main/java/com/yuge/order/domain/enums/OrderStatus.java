@@ -47,7 +47,17 @@ public enum OrderStatus {
     /**
      * 已取消
      */
-    CANCELED("CANCELED", "已取消");
+    CANCELED("CANCELED", "已取消"),
+
+    /**
+     * 已退款（全额退款）
+     */
+    REFUNDED("REFUNDED", "已退款"),
+
+    /**
+     * 部分退款
+     */
+    PARTIAL_REFUNDED("PARTIAL_REFUNDED", "部分退款");
 
     private final String code;
     private final String desc;
@@ -82,6 +92,6 @@ public enum OrderStatus {
      * 判断是否为终态
      */
     public boolean isTerminal() {
-        return this == CANCELED || this == STOCK_FAILED || this == DELIVERED;
+        return this == CANCELED || this == STOCK_FAILED || this == DELIVERED || this == REFUNDED;
     }
 }

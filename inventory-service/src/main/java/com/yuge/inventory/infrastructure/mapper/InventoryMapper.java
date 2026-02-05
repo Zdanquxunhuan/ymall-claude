@@ -90,4 +90,18 @@ public interface InventoryMapper extends BaseMapper<Inventory> {
     int updateAvailableQty(@Param("skuId") Long skuId, 
                            @Param("warehouseId") Long warehouseId,
                            @Param("availableQty") int availableQty);
+
+    /**
+     * CAS更新库存（退款回补：available增加）
+     */
+    @Update("UPDATE t_inventory SET " +
+            "available_qty = available_qty + #{qty}, " +
+            "version = version + 1, " +
+            "updated_at = NOW() " +
+            "WHERE sku_id = #{skuId} AND warehouse_id = #{warehouseId} " +
+            "AND version = #{version} AND deleted = 0")
+    int casRefundRestore(@Param("skuId") Long skuId, 
+                         @Param("warehouseId") Long warehouseId,
+                         @Param("qty") int qty, 
+                         @Param("version") int version);
 }

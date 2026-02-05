@@ -107,4 +107,61 @@ CREATE TABLE `t_payment_mq_consume_log` (
     KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='支付服务MQ消费日志表';
 
+-- ----------------------------
+-- 退款单表
+-- ----------------------------
+DROP TABLE IF EXISTS `t_refund_order`;
+CREATE TABLE `t_refund_order` (
+    `id` BIGINT NOT NULL COMMENT '主键ID',
+    `refund_no` VARCHAR(32) NOT NULL COMMENT '退款单号',
+    `pay_no` VARCHAR(32) NOT NULL COMMENT '原支付单号',
+    `order_no` VARCHAR(32) NOT NULL COMMENT '订单号',
+    `as_no` VARCHAR(32) COMMENT '售后单号',
+    `amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00 COMMENT '退款金额',
+    `status` VARCHAR(20) NOT NULL DEFAULT 'INIT' COMMENT '退款状态: INIT/REFUNDING/SUCCESS/FAILED',
+    `channel` VARCHAR(32) NOT NULL DEFAULT 'MOCK' COMMENT '退款渠道: MOCK/ALIPAY/WECHAT',
+    `channel_refund_no` VARCHAR(64) COMMENT '渠道退款流水号',
+    `refund_reason` VARCHAR(500) COMMENT '退款原因',
+    `refunded_at` DATETIME COMMENT '退款成功时间',
+    `items_json` TEXT COMMENT '退款明细JSON',
+    `version` INT NOT NULL DEFAULT 1 COMMENT '乐观锁版本号',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-未删除 1-已删除',
+    `created_by` VARCHAR(64) DEFAULT 'system' COMMENT '创建人',
+    `updated_by` VARCHAR(64) DEFAULT 'system' COMMENT '更新人',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_refund_no` (`refund_no`),
+    UNIQUE KEY `uk_order_no` (`order_no`),
+    KEY `idx_pay_no` (`pay_no`),
+    KEY `idx_as_no` (`as_no`),
+    KEY `idx_status` (`status`),
+    KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='退款单表';
+
+-- ----------------------------
+-- 退款回调日志表
+-- ----------------------------
+DROP TABLE IF EXISTS `t_refund_callback_log`;
+CREATE TABLE `t_refund_callback_log` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `refund_no` VARCHAR(32) NOT NULL COMMENT '退款单号',
+    `callback_id` VARCHAR(64) NOT NULL COMMENT '回调唯一ID（用于幂等）',
+    `channel` VARCHAR(32) NOT NULL COMMENT '退款渠道',
+    `channel_refund_no` VARCHAR(64) COMMENT '渠道退款流水号',
+    `callback_status` VARCHAR(20) NOT NULL COMMENT '回调状态: SUCCESS/FAILED',
+    `raw_payload` TEXT NOT NULL COMMENT '原始回调报文',
+    `signature` VARCHAR(256) COMMENT '签名',
+    `signature_valid` TINYINT NOT NULL DEFAULT 0 COMMENT '签名是否有效: 0-无效 1-有效',
+    `process_result` VARCHAR(20) COMMENT '处理结果: PROCESSED/IGNORED/FAILED',
+    `process_message` VARCHAR(500) COMMENT '处理结果说明',
+    `trace_id` VARCHAR(64) COMMENT '链路追踪ID',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_callback_id` (`callback_id`),
+    KEY `idx_refund_no` (`refund_no`),
+    KEY `idx_channel` (`channel`),
+    KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='退款回调日志表';
+
 SET FOREIGN_KEY_CHECKS = 1;

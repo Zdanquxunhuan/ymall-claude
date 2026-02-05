@@ -475,6 +475,103 @@ public class InventoryService {
     }
 
     /**
+     * 退款回补库存
+     * 
+     * 策略：回补到available，记录txn流水
+     * 
+     * @param orderNo     订单号
+     * @param asNo        售后单号
+     * @param skuId       SKU ID
+     * @param warehouseId 仓库ID
+     * @param qty         回补数量
+     * @return 是否成功
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean refundRestore(String orderNo, String asNo, Long skuId, Long warehouseId, int qty) {
+        log.info("[InventoryService] refundRestore start, orderNo={}, asNo={}, skuId={}, warehouseId={}, qty={}",
+                orderNo, asNo, skuId, warehouseId, qty);
+
+        // 1. 查询库存
+        Inventory inventory = inventoryRepository.findBySkuIdAndWarehouseId(skuId, warehouseId)
+                .orElse(null);
+        
+        if (inventory == null) {
+            log.warn("[InventoryService] refundRestore inventory not found, skuId={}, warehouseId={}", 
+                    skuId, warehouseId);
+            return false;
+        }
+
+        // 2. CAS更新DB库存（available增加）
+        boolean dbUpdated = inventoryRepository.casRefundRestore(skuId, warehouseId, qty, inventory.getVersion());
+        if (!dbUpdated) {
+            log.warn("[InventoryService] refundRestore DB CAS failed, skuId={}, warehouseId={}", skuId, warehouseId);
+            // 重试一次
+            inventory = inventoryRepository.findBySkuIdAndWarehouseId(skuId, warehouseId).orElse(inventory);
+            dbUpdated = inventoryRepository.casRefundRestore(skuId, warehouseId, qty, inventory.getVersion());
+            if (!dbUpdated) {
+                log.error("[InventoryService] refundRestore DB CAS failed after retry, skuId={}", skuId);
+                return false;
+            }
+        }
+
+        // 3. 同步Redis库存（增加available）
+        redisService.restoreAvailable(warehouseId, skuId, qty);
+
+        // 4. 记录流水
+        Inventory updatedInventory = inventoryRepository.findBySkuIdAndWarehouseId(skuId, warehouseId)
+                .orElse(inventory);
+        InventoryTxn txn = InventoryTxn.buildRefundRestoreTxn(
+                IdUtil.fastSimpleUUID(),
+                orderNo,
+                skuId,
+                warehouseId,
+                qty,
+                updatedInventory.getAvailableQty(),
+                updatedInventory.getReservedQty(),
+                asNo,
+                TraceContext.getTraceId()
+        );
+        txnRepository.save(txn);
+
+        log.info("[InventoryService] refundRestore success, orderNo={}, asNo={}, skuId={}, qty={}",
+                orderNo, asNo, skuId, qty);
+        return true;
+    }
+
+    /**
+     * 批量退款回补库存
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean batchRefundRestore(String orderNo, String asNo, List<RefundRestoreItem> items) {
+        log.info("[InventoryService] batchRefundRestore start, orderNo={}, asNo={}, itemCount={}",
+                orderNo, asNo, items.size());
+
+        for (RefundRestoreItem item : items) {
+            boolean success = refundRestore(orderNo, asNo, item.getSkuId(), item.getWarehouseId(), item.getQty());
+            if (!success) {
+                log.warn("[InventoryService] batchRefundRestore partial failed, skuId={}", item.getSkuId());
+                // 继续处理其他SKU，不中断
+            }
+        }
+
+        log.info("[InventoryService] batchRefundRestore completed, orderNo={}, asNo={}", orderNo, asNo);
+        return true;
+    }
+
+    /**
+     * 退款回补明细
+     */
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class RefundRestoreItem {
+        private Long skuId;
+        private Long warehouseId;
+        private int qty;
+    }
+
+    /**
      * 预留响应
      */
     @lombok.Data

@@ -282,6 +282,27 @@ public class InventoryRedisService {
     }
 
     /**
+     * 回补可用库存（退款场景）
+     *
+     * @param warehouseId 仓库ID
+     * @param skuId       SKU ID
+     * @param qty         回补数量
+     */
+    public void restoreAvailable(Long warehouseId, Long skuId, int qty) {
+        String invKey = buildInvKey(warehouseId, skuId);
+        try {
+            // 使用INCRBY原子增加库存
+            Long newValue = redisTemplate.opsForValue().increment(invKey, qty);
+            log.info("[InventoryRedisService] restoreAvailable success, warehouseId={}, skuId={}, qty={}, newAvailable={}",
+                    warehouseId, skuId, qty, newValue);
+        } catch (Exception e) {
+            log.error("[InventoryRedisService] restoreAvailable failed, warehouseId={}, skuId={}, qty={}, error={}",
+                    warehouseId, skuId, qty, e.getMessage(), e);
+            // 不抛出异常，DB已更新成功，Redis可以通过对账修复
+        }
+    }
+
+    /**
      * 构建库存key
      */
     private String buildInvKey(Long warehouseId, Long skuId) {
